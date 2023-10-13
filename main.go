@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+var predefinedProfiles = map[string][]int{
+	"S7-300":   {102, 502},
+	"S7-1200":  {102, 502, 8080},
+	"S7-1500":  {102, 502, 161, 443},
+	"Custom":   {},
+}
+
 func main() {
 	fmt.Print("Enter the IP address range to scan (e.g., 192.168.1.1-254): ")
 	var input string
@@ -30,17 +37,12 @@ func main() {
 		log.Fatal("Invalid IP address in the range.")
 	}
 
-	fmt.Print("Enter the specific port numbers to scan (e.g., 102,502): ")
+	fmt.Print("Select a predefined profile (S7-300, S7-1200, S7-1500, Custom): ")
 	fmt.Scan(&input)
-	ports := strings.Split(input, ",")
-	portList := make([]int, 0)
+	selectedProfile, profileExists := predefinedProfiles[input]
 
-	for _, portStr := range ports {
-		port, err := strconv.Atoi(portStr)
-		if err != nil || port < 1 || port > 65535 {
-			log.Fatalf("Invalid port number: %s", portStr)
-		}
-		portList = append(portList, port)
+	if !profileExists {
+		log.Fatal("Invalid profile. Use 'S7-300', 'S7-1200', 'S7-1500', or 'Custom'.")
 	}
 
 	logFile, err := os.Create("scan_results.txt")
@@ -52,7 +54,7 @@ func main() {
 
 	for i := startIPInt; i <= endIPInt; i++ {
 		ip := intToIP(i)
-		for _, port := range portList {
+		for _, port := range selectedProfile {
 			address := fmt.Sprintf("%s:%d", ip, port)
 			conn, err := net.Dial("tcp", address)
 			if err != nil {
