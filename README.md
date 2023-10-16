@@ -24,7 +24,7 @@ This is a simple command-line port scanning tool written in Golang. It allows yo
   - All (Scans all predefined profiles except Custom)
   - Custom (Specify custom port numbers to scan)
 
-1. The tool will scan the specified IP address range for the selected profile's port numbers and log the results in a text file with a unique name that includes the current date and time (e.g., "scan_results_2023-10-13-15-30-45.txt").
+ *The tool will scan the specified IP address range for the selected profile's port numbers and log the results in a text file with a unique name that includes the current date and time (e.g., "scan_results_2023-10-13-15-30-45.txt").*
 
 ## License
 
