@@ -7,13 +7,18 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var predefinedProfiles = map[string][]int{
-	"S7-300":   {102, 502},
-	"S7-1200":  {102, 502, 8080},
-	"S7-1500":  {102, 502, 161, 443},
-	"Custom":   {},
+	"S7-300":       {102, 502},
+	"S7-1200":      {102, 502, 8080},
+	"S7-1500":      {102, 502, 161, 443},
+	"ScalanceX200": {80, 443},
+	"IPC":          {3389}, // Add the RDP port (3389) for IPC devices
+	"SiemensHMI":   {80, 102, 161}, // Add the specific ports for Siemens HMI devices
+	"All": 			{102, 502, 8080, 161, 443, 80, 3389}, // Combine all predefined profiles
+	"Custom":       {},
 }
 
 func main() {
@@ -37,15 +42,19 @@ func main() {
 		log.Fatal("Invalid IP address in the range.")
 	}
 
-	fmt.Print("Select a predefined profile (S7-300, S7-1200, S7-1500, Custom): ")
+	fmt.Print("Select a predefined profile (S7-300, S7-1200, S7-1500, ScalanceX200, IPC, SiemensHMI, All, Custom): ")
 	fmt.Scan(&input)
 	selectedProfile, profileExists := predefinedProfiles[input]
 
 	if !profileExists {
-		log.Fatal("Invalid profile. Use 'S7-300', 'S7-1200', 'S7-1500', or 'Custom'.")
+		log.Fatal("Invalid profile. Use 'S7-300', 'S7-1200', 'S7-1500', 'ScalanceX200', 'IPC', 'SiemensHMI', 'All', or 'Custom'.")
 	}
 
-	logFile, err := os.Create("scan_results.txt")
+	// Generate a unique log file name with the current date and time
+	currentDateTime := time.Now().Format("2006-01-02-15-04-05")
+	logFileName := fmt.Sprintf("scan_results_%s.txt", currentDateTime)
+
+	logFile, err := os.Create(logFileName)
 	if err != nil {
 		log.Fatal("Cannot create log file")
 	}
@@ -60,32 +69,17 @@ func main() {
 			if err != nil {
 				continue // Port is closed or filtered
 			}
+
+			// Read and log the banner information
+			banner := make([]byte, 1024)
+			_, err = conn.Read(banner)
+			if err != nil {
+				banner = []byte("No banner information available.")
+			}
+
 			conn.Close()
-			result := fmt.Sprintf("Port %d is open on %s\n", port, ip)
+			result := fmt.Sprintf("Port %d is open on %s\nBanner Information: %s\n", port, ip, string(banner))
 			log.Print(result)
 		}
 	}
-}
-
-// Function to convert an IP address to an integer
-func ipToInt(ip string) int {
-	parts := strings.Split(ip, ".")
-	if len(parts) != 4 {
-		return -1
-	}
-
-	var result int
-	for _, part := range parts {
-		partInt, err := strconv.Atoi(part)
-		if err != nil || partInt < 0 || partInt > 255 {
-			return -1
-		}
-		result = (result << 8) | partInt
-	}
-	return result
-}
-
-// Function to convert an integer to an IP address
-func intToIP(ipInt int) string {
-	return fmt.Sprintf("%d.%d.%d.%d", (ipInt>>24)&0xFF, (ipInt>>16)&0xFF, (ipInt>>8)&0xFF, ipInt&0xFF)
 }
